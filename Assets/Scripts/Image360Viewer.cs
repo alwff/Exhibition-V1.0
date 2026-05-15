@@ -47,7 +47,7 @@ public class Image360Viewer : MonoBehaviour
 
             if (hintText != null)
             {
-                hintText.text = "Arrastra para rotar\nPresiona X o ESC para cerrar";
+                hintText.text = "Arrastra presionando click izquierdo para rotar\nPresiona X para cerrar";
             }
 
             CancelInvoke(nameof(HideHint));
@@ -78,7 +78,7 @@ public class Image360Viewer : MonoBehaviour
             display.texture = frames[index];
         }
 
-        if (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.X))
         {
             Close();
         }
