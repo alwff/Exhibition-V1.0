@@ -1,103 +1,51 @@
 using UnityEngine;
 using SUPERCharacter;
+using System.IO;
 
 public class PaintingSlot : MonoBehaviour, IInteractable
 {
     public Image360Viewer viewer;
-    public string specimenID;
+    public string folderPath;
 
     public Renderer targetRenderer;
-    public SpecimenAPIClient apiClient;
 
     private Texture2D[] images;
     private bool isLoaded = false;
     private int materialIndex = -1;
 
-    private SpecimenData lastData;
-
-    void Start()
-    {
-        if (!string.IsNullOrEmpty(specimenID) && apiClient != null)
-        {
-            StartCoroutine(apiClient.GetSpecimen(specimenID, (data) =>
-            {
-                lastData = data;
-
-                StartCoroutine(apiClient.LoadImagesStreaming(
-                    data.images,
-
-                    (firstImage) =>
-                    {
-                        images = new Texture2D[] { firstImage };
-                        ApplyPreview();
-                    },
-
-                    (loadedImages) =>
-                    {
-                        images = loadedImages;
-                        isLoaded = true;
-                        ApplyPreview();
-                    }
-                ));
-            }));
-        }
-    }
-
     public bool Interact()
     {
-        if (viewer == null || apiClient == null)
+        Debug.Log("INTERACTUASTE CON EL CUADRO");
+
+        if (viewer == null)
         {
-            Debug.LogError("Falta asignar viewer o apiClient");
+            Debug.LogError("Viewer no asignado");
             return false;
         }
 
-        if (string.IsNullOrEmpty(specimenID))
+        if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath))
         {
-            Debug.LogError("ID inválido");
+            Debug.LogError("Ruta inválida: " + folderPath);
             return false;
         }
 
-        if (!isLoaded && images == null)
+        if (!isLoaded)
         {
-            StartCoroutine(apiClient.GetSpecimen(specimenID, (data) =>
-            {
-                lastData = data;
+            images = SpecimenLoader.LoadImages(folderPath);
+            isLoaded = true;
 
-                StartCoroutine(apiClient.LoadImagesStreaming(
-                    data.images,
+            ApplyPreview();
+        }
 
-                    (firstImage) =>
-                    {
-                        images = new Texture2D[] { firstImage };
-                        ApplyPreview();
-                    },
-
-                    (loadedImages) =>
-                    {
-                        images = loadedImages;
-                        isLoaded = true;
-
-                        ApplyPreview();
-
-                        viewer.SetImages(images);
-                        viewer.SetInfo(data.name, data.description);
-                        viewer.Open();
-                    }
-                ));
-            }));
-
+        if (images != null && images.Length > 0)
+        {
+            viewer.SetImages(images);
+            viewer.Open();
             return true;
         }
 
-        viewer.SetImages(images);
-
-        if (lastData != null)
-        {
-            viewer.SetInfo(lastData.name, lastData.description);
-        }
-
-        viewer.Open();
-        return true;
+        Debug.LogWarning("No hay imágenes cargadas");
+        return false;
     }
 
     public void ApplyPreview()
@@ -127,6 +75,20 @@ public class PaintingSlot : MonoBehaviour, IInteractable
         {
             mats[materialIndex].mainTexture = images[0];
             targetRenderer.materials = mats;
+        }
+    }
+
+    public void SetFolder(string path)
+    {
+        folderPath = path;
+        isLoaded = false;
+
+        Texture2D[] preview = SpecimenLoader.LoadImages(path);
+
+        if (preview != null && preview.Length > 0)
+        {
+            images = preview;
+            ApplyPreview();
         }
     }
 }

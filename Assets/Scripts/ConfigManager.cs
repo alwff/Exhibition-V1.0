@@ -14,7 +14,7 @@ public class ConfigManager : MonoBehaviour
 
     void Start()
     {
-        // Load();
+        Load();
     }
 
     public void Save()
