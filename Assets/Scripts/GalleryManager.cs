@@ -4,11 +4,11 @@ public class GalleryManager : MonoBehaviour
 {
     public PaintingSlot[] slots;
 
-    public void AssignSpecimen(int slotIndex, string path)
+    public void AssignSpecimen(int slotIndex, string id)
     {
         if (slotIndex < 0 || slotIndex >= slots.Length) return;
 
-        slots[slotIndex].SetFolder(path);
+        slots[slotIndex].specimenID = id;
     }
 
     public string[] GetCurrentAssignments()
@@ -17,7 +17,7 @@ public class GalleryManager : MonoBehaviour
 
         for (int i = 0; i < slots.Length; i++)
         {
-            data[i] = slots[i].folderPath;
+            data[i] = slots[i].specimenID;
         }
 
         return data;

@@ -1,7 +1,5 @@
 using UnityEngine;
 using TMPro;
-using System.IO;
-using SUPERCharacter;
 
 public class AdminUI : MonoBehaviour
 {
@@ -11,11 +9,11 @@ public class AdminUI : MonoBehaviour
     public TextMeshProUGUI slotText;
     public TextMeshProUGUI instructionsText;
 
-    public SpecimenManager specimenManager;
     public GalleryManager galleryManager;
-    public ConfigManager configManager;
 
-    private string[] specimenPaths;
+    // LISTA DE IDs TEMPORAL
+    public string[] specimenIDs = { "BUTTERFLY01", "DINO01" };
+
     private string[] tempAssignments;
 
     private int currentSpecimen = 0;
@@ -25,16 +23,18 @@ public class AdminUI : MonoBehaviour
 
     void Start()
     {
-        specimenPaths = specimenManager.GetAllSpecimens();
-
-        if (specimenPaths == null || specimenPaths.Length == 0)
+        if (galleryManager == null)
         {
-            Debug.LogError("No hay especímenes");
+            Debug.LogError("GalleryManager no asignado");
             return;
         }
 
-        var current = galleryManager.GetCurrentAssignments();
-        tempAssignments = current.Clone() as string[];
+        tempAssignments = galleryManager.GetCurrentAssignments();
+
+        if (tempAssignments == null || tempAssignments.Length == 0)
+        {
+            tempAssignments = new string[galleryManager.slots.Length];
+        }
 
         UpdateUI();
     }
@@ -43,17 +43,18 @@ public class AdminUI : MonoBehaviour
     {
         if (!gameObject.activeSelf) return;
 
+        // Navegación entre especímenes
         if (!isConfirming)
         {
             if (Input.GetKeyDown(KeyCode.W))
             {
-                currentSpecimen = (currentSpecimen - 1 + specimenPaths.Length) % specimenPaths.Length;
+                currentSpecimen = (currentSpecimen - 1 + specimenIDs.Length) % specimenIDs.Length;
                 UpdateUI();
             }
 
             if (Input.GetKeyDown(KeyCode.S))
             {
-                currentSpecimen = (currentSpecimen + 1) % specimenPaths.Length;
+                currentSpecimen = (currentSpecimen + 1) % specimenIDs.Length;
                 UpdateUI();
             }
 
@@ -70,7 +71,7 @@ public class AdminUI : MonoBehaviour
             }
         }
 
-        // Confirmar con Y
+        // Confirmar selección
         if (Input.GetKeyDown(KeyCode.Y))
         {
             if (!isConfirming)
@@ -101,62 +102,48 @@ public class AdminUI : MonoBehaviour
         {
             adminCanvas.SetActive(false);
 
-            var controller = FindFirstObjectByType<SUPERCharacterAIO>();
-            if (controller != null)
-                controller.enabled = true;
-
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-
-            configManager.Load();
-        }
-
-        // Guardar
-        if (Input.GetKeyDown(KeyCode.G))
-        {
-            for (int i = 0; i < tempAssignments.Length; i++)
-            {
-                if (!string.IsNullOrEmpty(tempAssignments[i]))
-                {
-                    galleryManager.AssignSpecimen(i, tempAssignments[i]);
-                }
-            }
-
-            configManager.Save();
-            Debug.Log("CONFIG GUARDADA");
         }
     }
 
     void Assign()
     {
-        string path = specimenPaths[currentSpecimen] + "/images";
+        string id = specimenIDs[currentSpecimen];
 
-        tempAssignments[currentSlot] = path;
+        tempAssignments[currentSlot] = id;
 
-        galleryManager.AssignSpecimen(currentSlot, path);
+        galleryManager.AssignSpecimen(currentSlot, id);
+
+        Debug.Log("Asignado: " + id + " al cuadro " + currentSlot);
     }
 
     public void UpdateUI()
     {
-        string specimenName = Path.GetFileName(specimenPaths[currentSpecimen]);
+        string specimenID = specimenIDs[currentSpecimen];
 
-        specimenText.text = "Especimen: " + specimenName;
-        slotText.text = "Cuadro: " + (currentSlot + 1);
+        if (specimenText != null)
+            specimenText.text = "Especimen: " + specimenID;
 
-        if (!isConfirming)
+        if (slotText != null)
+            slotText.text = "Cuadro: " + (currentSlot + 1);
+
+        if (instructionsText != null)
         {
-            instructionsText.text =
-                "W/S: Cambiar espécimen\n" +
-                "A/D: Cambiar cuadro\n" +
-                "Y: Seleccionar\n" +
-                "G: Guardar\n" +
-                "ESC: Salir";
-        }
-        else
-        {
-            instructionsText.text =
-                "Y: Confirmar\n" +
-                "X: Cancelar";
+            if (!isConfirming)
+            {
+                instructionsText.text =
+                    "W/S: Cambiar espécimen\n" +
+                    "A/D: Cambiar cuadro\n" +
+                    "Y: Seleccionar\n" +
+                    "ESC: Salir";
+            }
+            else
+            {
+                instructionsText.text =
+                    "Y: Confirmar\n" +
+                    "X: Cancelar";
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class Image360Viewer : MonoBehaviour
 {
@@ -9,6 +10,9 @@ public class Image360Viewer : MonoBehaviour
 
     public GameObject hintContainer;
     public TextMeshProUGUI hintText;
+
+    public TextMeshProUGUI nameText;
+    public TextMeshProUGUI descriptionText;
 
     public Rigidbody playerRigidbody;
 
@@ -32,6 +36,9 @@ public class Image360Viewer : MonoBehaviour
     {
         panel.SetActive(true);
 
+        panel.transform.localScale = Vector3.zero;
+        StartCoroutine(ScaleIn());
+
         InputBlocker.blockInput = true;
 
         if (playerRigidbody != null)
@@ -53,12 +60,17 @@ public class Image360Viewer : MonoBehaviour
             CancelInvoke(nameof(HideHint));
             Invoke(nameof(HideHint), hintDuration);
         }
+
+        if (nameText != null)
+            StartCoroutine(FadeText(nameText, 0.5f));
+
+        if (descriptionText != null)
+            StartCoroutine(FadeText(descriptionText, 0.8f));
     }
 
     public void Close()
     {
         panel.SetActive(false);
-
         InputBlocker.blockInput = false;
     }
 
@@ -84,11 +96,58 @@ public class Image360Viewer : MonoBehaviour
         }
     }
 
+    IEnumerator ScaleIn()
+    {
+        float duration = 0.25f;
+        float t = 0;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float scale = Mathf.Lerp(0, 1, t / duration);
+            panel.transform.localScale = new Vector3(scale, scale, scale);
+            yield return null;
+        }
+
+        panel.transform.localScale = Vector3.one;
+    }
+
+    IEnumerator FadeText(TextMeshProUGUI text, float duration)
+    {
+        if (text == null) yield break;
+
+        Color c = text.color;
+        c.a = 0;
+        text.color = c;
+
+        float t = 0;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            c.a = Mathf.Lerp(0, 1, t / duration);
+            text.color = c;
+            yield return null;
+        }
+
+        c.a = 1;
+        text.color = c;
+    }
+
     void HideHint()
     {
         if (hintContainer != null)
         {
             hintContainer.SetActive(false);
         }
+    }
+
+    public void SetInfo(string name, string description)
+    {
+        if (nameText != null)
+            nameText.text = name;
+
+        if (descriptionText != null)
+            descriptionText.text = description;
     }
 }
